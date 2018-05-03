@@ -2,6 +2,8 @@ package com.mirakl.product.api.download;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,8 +28,11 @@ public class ProductDownloadWorker implements Runnable {
 		String threadName = Thread.currentThread().getName();
 	    System.out.println("ThreadName: " + threadName);
 	    
-	    final File importedDir = new File(Constants.IMPORTED_DIR);
-		importedDir.mkdirs();
+	    final File successDir = new File(Constants.IMPORTED_DIR_SUCCESS);
+		successDir.mkdirs();
+		
+		final File errorDir = new File(Constants.IMPORTED_DIR_ERROR);
+		errorDir.mkdirs();
 		
 		for (Seller seller : sellers) {
 			
@@ -37,17 +42,36 @@ public class ProductDownloadWorker implements Runnable {
 				
 				String csvFile = productDownloadClient.importByImportId(seller.getImportId());
 				
-				FileWriter fw = new FileWriter(new File(importedDir, seller.getFileName()));
-				fw.write(csvFile);
-				fw.close();
+				saveSuccess(seller, successDir, csvFile);
 				
 				System.out.println("Importado com Sucesso!");
 			} catch (Exception e) {
-				System.out.println("Erro na importacao! " + seller.getImportId());
-				e.printStackTrace();
-			}
-		
+				saveError(seller, errorDir, e);
+			}		
 		}
+	}
+	
+	private void saveSuccess(Seller seller, File successDir, String csvFile) throws Exception {
+		FileWriter fw = new FileWriter(new File(successDir, seller.getFileName()));
+		fw.write(new String(csvFile.getBytes(Constants.CHARSET_NAME_CSV_FILE_MIRAKL)));
+		fw.close();
+	}
+
+	private void saveError(Seller seller, File errorDir, Exception e) {
+		
+		try {
+			FileWriter fw = new FileWriter(new File(errorDir, seller.getFileName()));
+			fw.write(getStackTrace(e));
+			fw.close();
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+	}
+	
+	private String getStackTrace(Throwable thrown) {
+	   StringWriter sw = new StringWriter();
+	   thrown.printStackTrace(new PrintWriter(sw));
+	   return sw.toString();
 	}
 	
 	public void setSellers(List<Seller> sellers) {

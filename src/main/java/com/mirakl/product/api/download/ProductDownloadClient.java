@@ -46,7 +46,7 @@ public class ProductDownloadClient {
 	private HttpEntity getRequestEntity() {
 		
 		List<MediaType> accept = new ArrayList<MediaType>();
-		accept.add(MediaType.APPLICATION_FORM_URLENCODED);
+		accept.add(MediaType.ALL);
         HttpHeaders headers = new HttpHeaders();
         headers.add(authorizationKey, authorizationValue);
         headers.setAccept(accept);
